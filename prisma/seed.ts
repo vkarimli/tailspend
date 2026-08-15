@@ -620,7 +620,7 @@ const CATEGORIES: CategorySeed[] = [
     subcategories: [
       {
         slug: "kablolar",
-        name: "Kablolar",
+        name: "Kablo",
         description: "NYA, NYM ve topraklama kabloları.",
         icon: "🔌",
         specDefs: [
