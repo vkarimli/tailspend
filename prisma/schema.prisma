@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// A category node in the browsing taxonomy (e.g. Bağlantı Elemanları -> Altıgen Başlı Cıvatalar).
+// Self-referential so we can model McMaster-style deep category trees.
+model Category {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  icon        String? // emoji used as a lightweight visual in the nav/grid
+  sortOrder   Int      @default(0)
+
+  parentId String?
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+
+  products Product[]
+  specDefs SpecDefinition[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parentId])
+}
+
+// Declares which spec columns are relevant for products in a given category,
+// e.g. category "Altıgen Başlı Cıvatalar" defines specs "Diş Çapı", "Uzunluk", "Malzeme".
+// Drives the spec-based filter UI on category pages, McMaster-style.
+model SpecDefinition {
+  id         String @id @default(cuid())
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  key       String // stable machine key, e.g. "thread_diameter"
+  label     String // Turkish display label, e.g. "Diş Çapı"
+  unit      String? // e.g. "mm"
+  sortOrder Int     @default(0)
+
+  values ProductSpecValue[]
+
+  @@unique([categoryId, key])
+}
+
+model Product {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  sku         String  @unique
+  name        String
+  description String
+  icon        String? // emoji placeholder image
+  priceCents  Int // price in kuruş (1/100 TRY) to avoid float rounding
+  currency    String  @default("TRY")
+  inStock     Boolean @default(true)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  specs ProductSpecValue[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+}
+
+// The actual value a product has for one of its category's spec definitions.
+model ProductSpecValue {
+  id String @id @default(cuid())
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  specDefId String
+  specDef   SpecDefinition @relation(fields: [specDefId], references: [id], onDelete: Cascade)
+
+  value String // stored as text; rendered with the spec's unit
+
+  @@unique([productId, specDefId])
+  @@index([specDefId, value])
+}
