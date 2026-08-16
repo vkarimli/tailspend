@@ -44,3 +44,5 @@ Uygulama http://localhost:3000 adresinde çalışır.
   filtreli ürün listesi
 - `/urun/[slug]` — ürün detayı ve teknik özellik tablosu
 - `/arama?q=...` — ürün/kategori/SKU arama
+
+Testing plan mode.
